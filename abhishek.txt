@@ -1,0 +1,830 @@
+Create table sales_2015 as select * from sales where ship_date between '2015-01-01' and '2015-12-31';
+select count(*) from sales_2015; --2131
+select count(distinct customer_id) from sales_2015
+
+/* Customers with age between 20 and 60 */
+create table customer_20_60 as select * from customer where age between 20 and 60;
+select count (*) from customer_20_60;
+
+select 
+ a.order_line,
+ a.product_id,
+ a.customer_id,
+ a.sales,
+ b.customer_name,
+ b.age
+ from sales_2015 as a left join customer_20_60 as b
+ on a.customer_id = b.customer_id order by customer_id;
+ 
+ 
+ select
+  a.order_line,
+  a.product_id,
+  a.customer_id,
+  a.sales,
+  b.customer_name,
+  b.age
+  from sales_2015 as a right join customer_20_60 as b
+  on a.customer_id = b.customer_id order by customer_id;
+  
+  /* Full Join*/
+  
+select
+ a.order_line,
+ a.product_id,
+ a.customer_id,
+ a.sales,
+ b.customer_name,
+ b.age,
+ b.customer_id
+ from sales_2015 as a full join customer_20_60 as b
+ on a.customer_id = b.customer_id order by a.customer_id, b.customer_id;
+ 
+ 
+/* Combining Queries*/
+/* Intersect*/
+
+select customer_id from sales_2015
+intersect 
+select customer_id from customer_20_60;
+
+
+/* except*/
+
+select customer_id from sales_2015
+except 
+select customer_id from customer_20_60
+order by customer_id;
+
+
+
+/* union*/
+
+select customer_id from sales_2015
+union 
+select customer_id from customer_20_60
+order by customer_id;
+
+/* sub queries   "where"*/ 
+
+select * from Sales
+where customer_id in (select customer_id from customer where age>60);
+
+
+/* sub query "from" */
+
+
+select 
+ a.product_id,
+ a.product_name,
+ a.category,
+ b.quantity
+ from Product as a left join(select product_id,sum(quantity)as
+                            quantity from sales group by product_id)as b
+                            on a.product_id = b.product_id order by b.product desc;
+                            
+
+/* subquery -" select"*/
+
+
+select customer_id, order_line,(select customer_name from customer where
+                               sales.customer_id = customer.customer_id)
+                               from sales order by customer_id;
+                               
+                               
+/* Create View*/
+
+create view logistics as
+select a.order_line,
+a.order_id,
+b.customer_name,
+b.city,
+b.state,
+b.country from sales as a left join customer as b
+on a.customer_id = b.customer_id
+order by a.order_line;
+
+select * from logistics;
+
+
+/* drop replace*/
+
+drop view logistics;
+
+
+
+/* Index  */
+
+
+create index mon_idx
+on month_values(MM);
+
+
+/* drop rename index*/
+
+drop index mon_idx;
+
+ select * from sales;
+ 
+select customer_name, length(customer_name) as character from customer 
+where age >30;
+
+
+ select customer_name, country, replace(country,'United States','US') 
+ as country_new from customer;
+ 
+ 
+ select customer_name,city||' , '||state||' , '|| country as address from Customer;
+ 
+ 
+ select 
+ customer_id,
+ customer_name,
+ substring(customer_id for 2) as cust_group from customer 
+ where substring(customer_id for 2) ='AB';
+ 
+ 
+ select customer_id,
+ customer_name, substring(customer_id from 4 for 5) as cust_group from customer
+ where substring(customer_id for 2) = 'AB';
+ 
+ select * from sales order by order_id;
+ 
+ select order_id,
+ string_agg(product_id, ',') from sales group by order_id order by order_id;
+ 
+ 
+ select order_line
+ sales, ceil(sales),
+ floor(sales) from sales;
+ 
+ 
+ /* Random number*/
+ 
+ /* a=10 and b=50 */
+ 
+ select random(),random()*40+10,
+ floor(random()*40)+10;
+ 
+ 
+ /* SETSEED  */
+ 
+ select setseed(0.5);
+ 
+select random(); --0.2499041
+select random(); --0.52001761222
+
+select setseed(0.5);
+
+select random();
+select random();
+
+
+/* round  */
+select order_line, sales, round(sales) from sales order by  sales desc;
+
+
+/* Power */ 
+
+select power(age,2), age from customer;
+select power(6,2);
+
+/* Current date and time  */
+
+
+ select current_date, current_time,current_time(1),
+ current_time(3), current_timestamp;
+ 
+ 
+ /* AGE */
+ 
+  select age ('2024-03-24','1992-04-04');
+  
+  select order_line, order_date, ship_date, age (ship_date, order_date)
+  as time_taken from sales order by time_taken desc;
+  
+  
+  /* extract   */
+  
+  select extract(month from current_date);
+   select extract(day from current_date);
+   
+   select extract (year from current_date);
+   
+   select extract(minute from current_time);
+   
+   select extract(hour from current_time);
+
+select order_line, extract(epoch from (ship_date - order_date)) from sales;  --wrong line
+
+select order_date,ship_date,( extract(epoch from ship_date) - 
+extract(epoch from order_date)) as sec_taken from sales;
+
+
+
+/* Pattern matching  */
+
+select * from customer where customer_name like 'Jo%';
+
+select * from customer;
+
+select * from customer where customer_name like '%od%';
+
+
+
+/* windows function */
+
+select * from customer limit 10;
+
+select * from sales;
+
+select a.*,b.ordered_num,b.total_sales,b.total_quantity, b.total_profit 
+from customer as a
+left join (select customer_id, count(distinct order_id) as ordered_num, sum(sales)
+     as total_sales, sum(quantity) as total_quantity, sum(profit) as total_profit
+     from sales group by customer_id)as b
+      on a.customer_id=b.customer_id;
+ /*       
+select * from sales where customer_id ='AA-10315' order by order_idm   */
+/* above query can be use to create a table */
+
+create table customer_order as (select a.*,b.ordered_num,b.total_sales,b.total_quantity, b.total_profit 
+from customer as a
+left join (select customer_id, count(distinct order_id) as ordered_num, sum(sales)
+     as total_sales, sum(quantity) as total_quantity, sum(profit) as total_profit
+     from sales group by customer_id)as b
+      on a.customer_id=b.customer_id);
+      
+      
+select * from customer_order;
+
+/* partition by  */
+
+select customer_id, customer_name, state, ordered_num, row_number() over
+(partition by state order by ordered_num desc)as row_num
+from customer_order;
+
+
+select * from (select customer_id, customer_name, state, ordered_num, row_number()
+               over (partition by state order by ordered_num desc) as row_num
+               from customer_order) as a where a.row_num<=3;
+               
+               
+
+           
+ /* from ran and desnrank*/
+ 
+select customer_id, customer_name, state, ordered_num, row_number() over
+(partition by state order by ordered_num desc) as row_num,
+rank() over (partition by state order by ordered_num desc) as rank_num,
+dense_rank() over( partition by state order by ordered_num desc) as drank_num 
+ntile(5) over( partition by state order by ordered_num desc)
+ from customer_order;
+ 
+
+
+/* Ntile Function */
+
+select customer_id, customer_name, state, ordered_num, row_number() over
+(partition by state order by ordered_num desc) as row_num,
+rank() over (partition by state order by ordered_num desc) as rank_num,
+dense_rank() over( partition by state order by ordered_num desc) as drank_num,
+ntile(5) over(Partition by state order by ordered_num desc) as tile_num
+ from customer_order;
+ 
+ 
+ select * from (select customer_id, customer_name, state, ordered_num, row_number() over
+(partition by state order by ordered_num desc) as row_num,
+rank() over (partition by state order by ordered_num desc) as rank_num,
+dense_rank() over( partition by state order by ordered_num desc) as drank_num,
+ntile(5) over(Partition by state order by ordered_num desc) as tile_num
+ from customer_order )as a  where a.tile_num = 5;
+
+
+/* Average function  */
+
+select * from customer_order;
+select * from(
+select customer_id, customer_name, state, total_sales as revenue,
+avg(total_sales) over (partition by state) as avg_revenue from customer_order)
+as a where a.revenue< a.avg_revenue;
+
+
+
+/* count function  */
+
+select customer_id, customer_name, state, count(customer_id) over 
+(partition by state) as count_cust from customer_order;
+
+
+/* Sum total funtion*/
+select * from sales;
+
+create table order_rollup as
+select order_id, max(order_date) as order_date, max(customer_id) as customer_id,
+sum(sales) as revenue from sales group by order_id;
+
+create table order_rollup_state as select a.*, b.state from order_rollup as a 
+left join customer as b on a.customer_id = b.customer_id;
+
+
+select * from order_rollup_state;
+
+select *, 
+sum(revenue)
+over (partition by state) as total_sales_state 
+from order_rollup_state;
+
+
+/* Running Total */
+
+select*,
+sum(revenue) over(partition by state) as total_sales_state,
+sum(revenue) over(partition by state order by order_date) as running_total
+from order_rollup_state;
+
+
+/* lag and lead */
+
+select customer_id, order_date, order_id,revenue, lead(revenue,1)
+over(partition by customer_id order by order_date) as previous_sales,
+lead(order_id,1) over (partition by customer_id order by order_date)
+as previous_order_id from order_rollup_state;
+
+
+
+/* Coalesce   */
+
+/* table name empl_name  */
+
+/* To_char   */
+
+select sales, 'Total sales value for this order is ' || to_char (sales, '$9,9999.99')
+                         as message from sales;
+                         
+/* Calculate number or date to string */
+
+select order_date, to_char (order_date, 'DDMMYY') from sales;
+
+select order_date, to_char(order_date, 'Month DD, YYYY') from sales;
+
+
+/* Acees control */
+
+create user Ab_tech
+with password 'Abhishek04#';
+
+/*  grant acces  */
+grant select, delete, insert, update on product to Ab_tech;
+
+revoke delete on product from Ab_tech;
+
+drop user Ab_tech;
+
+revoke all on product from Ab_tech;
+                        
+/* find all users */
+
+select usename from pg_user;
+
+select * from pg_user;
+
+/* find logged in users  */
+
+select distinct usename from pg_stat_activity;
+  
+
+
+
+
+Create table sales_2015 as select * from sales where ship_date between '2015-01-01' and '2015-12-31';
+select count(*) from sales_2015; --2131
+select count(distinct customer_id) from sales_2015
+
+/* Customers with age between 20 and 60 */
+create table customer_20_60 as select * from customer where age between 20 and 60;
+select count (*) from customer_20_60;
+
+select 
+ a.order_line,
+ a.product_id,
+ a.customer_id,
+ a.sales,
+ b.customer_name,
+ b.age
+ from sales_2015 as a left join customer_20_60 as b
+ on a.customer_id = b.customer_id order by customer_id;
+ 
+ 
+ select
+  a.order_line,
+  a.product_id,
+  a.customer_id,
+  a.sales,
+  b.customer_name,
+  b.age
+  from sales_2015 as a right join customer_20_60 as b
+  on a.customer_id = b.customer_id order by customer_id;
+  
+  /* Full Join*/
+  
+select
+ a.order_line,
+ a.product_id,
+ a.customer_id,
+ a.sales,
+ b.customer_name,
+ b.age,
+ b.customer_id
+ from sales_2015 as a full join customer_20_60 as b
+ on a.customer_id = b.customer_id order by a.customer_id, b.customer_id;
+ 
+ 
+/* Combining Queries*/
+/* Intersect*/
+
+select customer_id from sales_2015
+intersect 
+select customer_id from customer_20_60;
+
+
+/* except*/
+
+select customer_id from sales_2015
+except 
+select customer_id from customer_20_60
+order by customer_id;
+
+
+
+/* union*/
+
+select customer_id from sales_2015
+union 
+select customer_id from customer_20_60
+order by customer_id;
+
+/* sub queries   "where"*/ 
+
+select * from Sales
+where customer_id in (select customer_id from customer where age>60);
+
+
+/* sub query "from" */
+
+
+select 
+ a.product_id,
+ a.product_name,
+ a.category,
+ b.quantity
+ from Product as a left join(select product_id,sum(quantity)as
+                            quantity from sales group by product_id)as b
+                            on a.product_id = b.product_id order by b.product desc;
+                            
+
+/* subquery -" select"*/
+
+
+select customer_id, order_line,(select customer_name from customer where
+                               sales.customer_id = customer.customer_id)
+                               from sales order by customer_id;
+                               
+                               
+/* Create View*/
+
+create view logistics as
+select a.order_line,
+a.order_id,
+b.customer_name,
+b.city,
+b.state,
+b.country from sales as a left join customer as b
+on a.customer_id = b.customer_id
+order by a.order_line;
+
+select * from logistics;
+
+
+/* drop replace*/
+
+drop view logistics;
+
+
+
+/* Index  */
+
+
+create index mon_idx
+on month_values(MM);
+
+
+/* drop rename index*/
+
+drop index mon_idx;
+
+ select * from sales;
+ 
+select customer_name, length(customer_name) as character from customer 
+where age >30;
+
+
+ select customer_name, country, replace(country,'United States','US') 
+ as country_new from customer;
+ 
+ 
+ select customer_name,city||' , '||state||' , '|| country as address from Customer;
+ 
+ 
+ select 
+ customer_id,
+ customer_name,
+ substring(customer_id for 2) as cust_group from customer 
+ where substring(customer_id for 2) ='AB';
+ 
+ 
+ select customer_id,
+ customer_name, substring(customer_id from 4 for 5) as cust_group from customer
+ where substring(customer_id for 2) = 'AB';
+ 
+ select * from sales order by order_id;
+ 
+ select order_id,
+ string_agg(product_id, ',') from sales group by order_id order by order_id;
+ 
+ 
+ select order_line
+ sales, ceil(sales),
+ floor(sales) from sales;
+ 
+ 
+ /* Random number*/
+ 
+ /* a=10 and b=50 */
+ 
+ select random(),random()*40+10,
+ floor(random()*40)+10;
+ 
+ 
+ /* SETSEED  */
+ 
+ select setseed(0.5);
+ 
+select random(); --0.2499041
+select random(); --0.52001761222
+
+select setseed(0.5);
+
+select random();
+select random();
+
+
+/* round  */
+select order_line, sales, round(sales) from sales order by  sales desc;
+
+
+/* Power */ 
+
+select power(age,2), age from customer;
+select power(6,2);
+
+/* Current date and time  */
+
+
+ select current_date, current_time,current_time(1),
+ current_time(3), current_timestamp;
+ 
+ 
+ /* AGE */
+ 
+  select age ('2024-03-24','1992-04-04');
+  
+  select order_line, order_date, ship_date, age (ship_date, order_date)
+  as time_taken from sales order by time_taken desc;
+  
+  
+  /* extract   */
+  
+  select extract(month from current_date);
+   select extract(day from current_date);
+   
+   select extract (year from current_date);
+   
+   select extract(minute from current_time);
+   
+   select extract(hour from current_time);
+
+select order_line, extract(epoch from (ship_date - order_date)) from sales;  --wrong line
+
+select order_date,ship_date,( extract(epoch from ship_date) - 
+extract(epoch from order_date)) as sec_taken from sales;
+
+
+
+/* Pattern matching  */
+
+select * from customer where customer_name like 'Jo%';
+
+select * from customer;
+
+select * from customer where customer_name like '%od%';
+
+
+
+/* windows function */
+
+select * from customer limit 10;
+
+select * from sales;
+
+select a.*,b.ordered_num,b.total_sales,b.total_quantity, b.total_profit 
+from customer as a
+left join (select customer_id, count(distinct order_id) as ordered_num, sum(sales)
+     as total_sales, sum(quantity) as total_quantity, sum(profit) as total_profit
+     from sales group by customer_id)as b
+      on a.customer_id=b.customer_id;
+ /*       
+select * from sales where customer_id ='AA-10315' order by order_idm   */
+/* above query can be use to create a table */
+
+create table customer_order as (select a.*,b.ordered_num,b.total_sales,b.total_quantity, b.total_profit 
+from customer as a
+left join (select customer_id, count(distinct order_id) as ordered_num, sum(sales)
+     as total_sales, sum(quantity) as total_quantity, sum(profit) as total_profit
+     from sales group by customer_id)as b
+      on a.customer_id=b.customer_id);
+      
+      
+select * from customer_order;
+
+/* partition by  */
+
+select customer_id, customer_name, state, ordered_num, row_number() over
+(partition by state order by ordered_num desc)as row_num
+from customer_order;
+
+
+select * from (select customer_id, customer_name, state, ordered_num, row_number()
+               over (partition by state order by ordered_num desc) as row_num
+               from customer_order) as a where a.row_num<=3;
+               
+               
+
+           
+ /* from ran and desnrank*/
+ 
+select customer_id, customer_name, state, ordered_num, row_number() over
+(partition by state order by ordered_num desc) as row_num,
+rank() over (partition by state order by ordered_num desc) as rank_num,
+dense_rank() over( partition by state order by ordered_num desc) as drank_num 
+ntile(5) over( partition by state order by ordered_num desc)
+ from customer_order;
+ 
+
+
+/* Ntile Function */
+
+select customer_id, customer_name, state, ordered_num, row_number() over
+(partition by state order by ordered_num desc) as row_num,
+rank() over (partition by state order by ordered_num desc) as rank_num,
+dense_rank() over( partition by state order by ordered_num desc) as drank_num,
+ntile(5) over(Partition by state order by ordered_num desc) as tile_num
+ from customer_order;
+ 
+ 
+ select * from (select customer_id, customer_name, state, ordered_num, row_number() over
+(partition by state order by ordered_num desc) as row_num,
+rank() over (partition by state order by ordered_num desc) as rank_num,
+dense_rank() over( partition by state order by ordered_num desc) as drank_num,
+ntile(5) over(Partition by state order by ordered_num desc) as tile_num
+ from customer_order )as a  where a.tile_num = 5;
+
+
+/* Average function  */
+
+select * from customer_order;
+select * from(
+select customer_id, customer_name, state, total_sales as revenue,
+avg(total_sales) over (partition by state) as avg_revenue from customer_order)
+as a where a.revenue< a.avg_revenue;
+
+
+
+/* count function  */
+
+select customer_id, customer_name, state, count(customer_id) over 
+(partition by state) as count_cust from customer_order;
+
+
+/* Sum total funtion*/
+select * from sales;
+
+create table order_rollup as
+select order_id, max(order_date) as order_date, max(customer_id) as customer_id,
+sum(sales) as revenue from sales group by order_id;
+
+create table order_rollup_state as select a.*, b.state from order_rollup as a 
+left join customer as b on a.customer_id = b.customer_id;
+
+
+select * from order_rollup_state;
+
+select *, 
+sum(revenue)
+over (partition by state) as total_sales_state 
+from order_rollup_state;
+
+
+/* Running Total */
+
+select*,
+sum(revenue) over(partition by state) as total_sales_state,
+sum(revenue) over(partition by state order by order_date) as running_total
+from order_rollup_state;
+
+
+/* lag and lead */
+
+select customer_id, order_date, order_id,revenue, lead(revenue,1)
+over(partition by customer_id order by order_date) as previous_sales,
+lead(order_id,1) over (partition by customer_id order by order_date)
+as previous_order_id from order_rollup_state;
+
+
+
+/* Coalesce   */
+
+/* table name empl_name  */
+
+/* To_char   */
+
+select sales, 'Total sales value for this order is ' || to_char (sales, '$9,9999.99')
+                         as message from sales;
+                         
+/* Calculate number or date to string */
+
+select order_date, to_char (order_date, 'DDMMYY') from sales;
+
+select order_date, to_char(order_date, 'Month DD, YYYY') from sales;
+
+
+/* Acees control */
+
+create user Ab_tech
+with password 'Abhishek04#';
+
+/*  grant acces  */
+grant select, delete, insert, update on product to Ab_tech;
+
+revoke delete on product from Ab_tech;
+
+drop user Ab_tech;
+
+revoke all on product from Ab_tech;
+                        
+/* find all users */
+
+select usename from pg_user;
+
+select * from pg_user;
+
+/* find logged in users  */
+
+select distinct usename from pg_stat_activity;
+  
+select distinct * from pg_stat_activity;
+
+/* tablespace  */
+
+create tablespace NewSpace location'C:\Program Files\PostgreSQL\14\data\data_file';
+
+create table customer_test (i int)tablespace NewSpace;
+
+select * from customer_test;
+select * from pg_tablespace;
+
+
+/* Truncate */
+
+select * from customer_20_60;
+
+truncate table customer_20_60;
+
+
+
+/* explain */
+ explain select * from customer;
+   create table test.customer as select * from customer;
+
+
+ explain select distinct * from customer;
+ 
+ 
+ /* schemas  */
+ 
+  create schema test;
+  
+
+
+
+
